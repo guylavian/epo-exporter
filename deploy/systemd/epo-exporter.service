@@ -1,0 +1,22 @@
+[Unit]
+Description=Trellix ePO Prometheus Exporter
+After=network.target
+
+[Service]
+User=epoexporter
+Group=epoexporter
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/local/bin/epo-exporter --web.listen-address=:9898
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/epo-exporter
+AmbientCapabilities=
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
+
+
