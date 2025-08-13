@@ -1,0 +1,2 @@
+[console_scripts]
+epo-exporter = cmd.epo_exporter.main:main

@@ -1,0 +1,14 @@
+# Example config for epo_exporter
+
+enabled_collectors:
+  - exporter_self
+  - inventory
+  - product_events
+  - product_gap
+  - policy_coverage
+  - policy_mismatch
+
+scrape_timeout: 20
+cache_ttl: 5
+log_level: INFO
+

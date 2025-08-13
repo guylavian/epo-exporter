@@ -1,0 +1,24 @@
+[project]
+name = "epo-exporter"
+version = "0.1.0"
+description = "Prometheus exporter for Trellix ePO (on-prem)"
+authors = [{name = "ePO Exporter", email = "noreply@example.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "prometheus_client>=0.16.0",
+  "requests>=2.28.0",
+  "pyyaml>=6.0.0",
+]
+
+[project.scripts]
+epo-exporter = "cmd.epo_exporter.main:main"
+
+[build-system]
+requires = ["setuptools>=62", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["epo_exporter", "cmd"]
+
+
