@@ -4,8 +4,13 @@ from typing import Callable
 
 from prometheus_client import make_wsgi_app
 from prometheus_client.core import CollectorRegistry
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIServer
+from socketserver import ThreadingMixIn
 from .health import is_ready
+
+
+class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
+    daemon_threads = True
 
 
 def serve_http(host: str, port: int, telemetry_path: str, registry: CollectorRegistry) -> None:
@@ -22,10 +27,14 @@ def serve_http(host: str, port: int, telemetry_path: str, registry: CollectorReg
             code = "200 OK" if is_ready() else "503 Service Unavailable"
             start_response(code, [("Content-Type", "text/plain; charset=utf-8")])
             return [b"ready\n" if code.startswith("200") else b"not ready\n"]
+        # Ecosystem aliases
+        if path == "/-/healthy":
+            start_response("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return [b"ok\n"]
         start_response("404 Not Found", [("Content-Type", "text/plain; charset=utf-8")])
         return [b"not found\n"]
 
-    httpd = make_server(host, port, app)
+    httpd = make_server(host, port, app, server_class=ThreadingWSGIServer)
     httpd.serve_forever()
 
 

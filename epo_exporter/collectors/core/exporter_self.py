@@ -3,27 +3,31 @@ from typing import Iterable, Optional
 
 from prometheus_client.core import GaugeMetricFamily, HistogramMetricFamily
 
-from ... import __version__
+from epo_exporter import __version__
 from ...config import EPO_HOST
-from ...runtime.telemetry import API_HISTOGRAM_BUCKETS, api_latency_agg
+from ...runtime.telemetry import api_latency_agg, API_HISTOGRAM_BUCKETS
+from ...runtime.base import CachingCollectorBase
+import logging
 
 
-class ExporterSelfCollector:
+class ExporterSelfCollector(CachingCollectorBase):
     """Exports exporter health and API latency histogram (populated by others)."""
 
-    def __init__(self, scrape_timeout: Optional[float] = None) -> None:
-        self.scrape_timeout = scrape_timeout
+    def __init__(self, scrape_timeout: float | None = None) -> None:
+        super().__init__(cache_ttl_seconds=0.0, scrape_timeout=scrape_timeout)
+        self._log = logging.getLogger(self.__class__.__name__)
 
     def describe(self) -> Iterable:
         return []
 
-    def collect(self) -> Iterable:
+    def _collect_now(self):
         start = time.time()
+        metrics = []
 
         up = GaugeMetricFamily("epo_up", "Whether the ePO server is responding (1) or not (0)")
         # The actual check is performed in inventory collector for now. Assume 1; downstream collectors may fail.
         up.add_metric([], 1)
-        yield up
+        metrics.append(up)
 
         info = GaugeMetricFamily(
             "epo_exporter_build_info",
@@ -31,7 +35,7 @@ class ExporterSelfCollector:
             labels=["host", "version"],
         )
         info.add_metric([EPO_HOST, __version__], 1)
-        yield info
+        metrics.append(info)
 
         # API response time histogram accumulated across last calls per command
         api_hist = HistogramMetricFamily(
@@ -49,7 +53,7 @@ class ExporterSelfCollector:
                 )
             api_hist.add_sample("epo_api_response_time_seconds_sum", {"command": cmd}, float(st["sum"]))  # type: ignore[index]
             api_hist.add_sample("epo_api_response_time_seconds_count", {"command": cmd}, int(st["count"]))  # type: ignore[index]
-        yield api_hist
+        metrics.append(api_hist)
 
         duration = HistogramMetricFamily(
             "epo_scrape_duration_seconds", "Exporter scrape duration (seconds)", buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0)
@@ -64,6 +68,8 @@ class ExporterSelfCollector:
         duration.add_sample("epo_scrape_duration_seconds_bucket", {"le": "+Inf"}, 1)
         duration.add_sample("epo_scrape_duration_seconds_sum", {}, dur)
         duration.add_sample("epo_scrape_duration_seconds_count", {}, 1)
-        yield duration
+        metrics.append(duration)
+
+        return metrics
 
 

@@ -11,10 +11,13 @@ _last_ok_ts: float = 0.0
 
 
 def refresh_readiness() -> bool:
-    """Attempt a cheap API call to ePO to assert readiness."""
+    """Try ePO heartbeat without crashing the server; returns whether ready."""
     global _last_ok_ts
-    res = call_onprem_api("core.getVersion")
-    ok = isinstance(res, (dict, list)) or res is not None
+    try:
+        res = call_onprem_api("core.getVersion")  # Should have internal timeout if supported
+        ok = isinstance(res, (dict, list)) or res is not None
+    except Exception:
+        ok = False
     if ok:
         with _lock:
             _last_ok_ts = time.time()

@@ -1,6 +1,8 @@
 README.md
 pyproject.toml
+cmd/__init__.py
 epo_exporter/__init__.py
+epo_exporter/__main__.py
 epo_exporter/collector.py
 epo_exporter/metrics.py
 epo_exporter/registry.py
